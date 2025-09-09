@@ -1,13 +1,77 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Header from "@/components/Header";
+import Hero from "@/components/Hero";
+import FeaturedProperties from "@/components/FeaturedProperties";
+import Services from "@/components/Services";
+import About from "@/components/About";
+import Contact from "@/components/Contact";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <main className="min-h-screen">
+      <Header />
+      <section id="home">
+        <Hero />
+      </section>
+      <section id="properties">
+        <FeaturedProperties />
+      </section>
+      <section id="services">
+        <Services />
+      </section>
+      <section id="about">
+        <About />
+      </section>
+      <section id="contact">
+        <Contact />
+      </section>
+      
+      {/* Footer */}
+      <footer className="bg-foreground text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">Premier Properties</h3>
+              <p className="text-white/80 mb-4">
+                Building dreams and creating value through expert real estate development and investment services.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Services</h4>
+              <ul className="space-y-2 text-white/80">
+                <li>Land Development</li>
+                <li>Home Construction</li>
+                <li>Investment Advisory</li>
+                <li>Project Management</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Properties</h4>
+              <ul className="space-y-2 text-white/80">
+                <li>Residential Land</li>
+                <li>Commercial Plots</li>
+                <li>Modern Homes</li>
+                <li>Investment Opportunities</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Contact</h4>
+              <ul className="space-y-2 text-white/80">
+                <li>+1 (555) 123-4567</li>
+                <li>info@premierproperties.com</li>
+                <li>123 Business District, CA</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-white/20 mt-8 pt-8 text-center text-white/60">
+            <p>&copy; 2024 Premier Properties. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 };
 
