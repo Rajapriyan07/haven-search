@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Building2, Shield } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
@@ -28,10 +29,8 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 gradient-hero rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-foreground">Shabeer Land & Home Promoters</span>
+            <img src={logo} alt="Shabeer Land & Home Promoters" className="w-12 h-12 rounded-full object-cover" />
+            <span className="text-xl font-bold text-foreground hidden sm:inline">Shabeer Land & Home Promoters</span>
           </Link>
 
           {/* Desktop Navigation */}
