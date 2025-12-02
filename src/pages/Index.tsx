@@ -59,9 +59,9 @@ const Index = () => {
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
               <ul className="space-y-2 text-white/80">
-                <li>+1 (555) 123-4567</li>
-                <li>info@premierproperties.com</li>
-                <li>123 Business District, CA</li>
+                <li>+91 8056987186</li>
+                <li>shabeerkahn1982@gmail.com</li>
+                <li>Karur, Tamilnadu</li>
               </ul>
             </div>
           </div>
