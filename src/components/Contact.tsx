@@ -9,26 +9,26 @@ const contactInfo = [
   {
     icon: Phone,
     title: "Call Us",
-    details: "+1 (555) 123-4567",
-    subtitle: "Mon-Fri 8AM-6PM PST",
+    details: "+91 8056987186",
+    subtitle: "Available for inquiries",
   },
   {
     icon: Mail,
     title: "Email Us",
-    details: "info@premierproperties.com",
+    details: "shabeerkahn1982@gmail.com",
     subtitle: "24/7 response guaranteed",
   },
   {
     icon: MapPin,
     title: "Visit Us",
-    details: "123 Business District, CA",
-    subtitle: "Main headquarters",
+    details: "Karur, Tamilnadu",
+    subtitle: "Main office location",
   },
   {
     icon: Clock,
     title: "Business Hours",
-    details: "Mon-Fri: 8AM-6PM",
-    subtitle: "Weekend by appointment",
+    details: "Mon-Sat: 9AM-6PM",
+    subtitle: "Sunday by appointment",
   },
 ];
 
