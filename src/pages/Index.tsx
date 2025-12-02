@@ -30,7 +30,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold mb-4">Premier Properties</h3>
+              <h3 className="text-xl font-bold mb-4">Shabeer Land & Home Promoters</h3>
               <p className="text-white/80 mb-4">
                 Building dreams and creating value through expert real estate development and investment services.
               </p>
@@ -67,7 +67,7 @@ const Index = () => {
           </div>
           
           <div className="border-t border-white/20 mt-8 pt-8 text-center text-white/60">
-            <p>&copy; 2024 Premier Properties. All rights reserved.</p>
+            <p>&copy; 2024 Shabeer Land & Home Promoters. All rights reserved.</p>
           </div>
         </div>
       </footer>
