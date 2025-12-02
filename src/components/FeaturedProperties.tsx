@@ -1,47 +1,33 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { MapPin, Home, Ruler } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 import landPlot from "@/assets/land-plot.jpg";
 import modernHome from "@/assets/modern-home.jpg";
-import { MapPin, Home, Ruler } from "lucide-react";
 
-const properties = [
-  {
-    id: 1,
-    title: "Premium Land Development",
-    location: "Hillside Valley, CA",
-    price: "$2.5M",
-    area: "25 Acres",
-    type: "Land",
-    image: landPlot,
-    badge: "Prime Location",
-    description: "Exceptional development opportunity with panoramic views and approved zoning for residential projects.",
-  },
-  {
-    id: 2,
-    title: "Modern Family Estate",
-    location: "Riverside Heights, TX",
-    price: "$850K",
-    area: "3,200 sq ft",
-    type: "Home",
-    image: modernHome,
-    badge: "Move-in Ready",
-    description: "Contemporary design with luxury finishes, smart home features, and stunning landscape architecture.",
-  },
-  {
-    id: 3,
-    title: "Commercial Land Plot",
-    location: "Downtown District, FL",
-    price: "$1.8M",
-    area: "5.2 Acres",
-    type: "Commercial",
-    image: landPlot,
-    badge: "High ROI",
-    description: "Strategic commercial location with high traffic and excellent visibility for retail or office development.",
-  }
-];
+const getPropertyImage = (type: string) => {
+  if (type === "Home") return modernHome;
+  return landPlot;
+};
 
 const FeaturedProperties = () => {
+  const { data: properties, isLoading, error } = useQuery({
+    queryKey: ['featured-properties'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('featured', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   return (
     <section className="py-20 gradient-subtle">
       <div className="container mx-auto px-4">
@@ -54,53 +40,78 @@ const FeaturedProperties = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {properties.map((property) => (
-            <Card key={property.id} className="overflow-hidden hover-scale shadow-card hover:shadow-elegant transition-smooth">
-              <div className="relative">
-                <img 
-                  src={property.image} 
-                  alt={property.title}
-                  className="w-full h-64 object-cover"
-                />
-                <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground">
-                  {property.badge}
-                </Badge>
-              </div>
-              
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <CardTitle className="text-xl">{property.title}</CardTitle>
-                  <span className="text-2xl font-bold text-primary">{property.price}</span>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="overflow-hidden">
+                <Skeleton className="w-full h-64" />
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center text-destructive">
+            Failed to load properties. Please try again later.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {properties?.map((property) => (
+              <Card key={property.id} className="overflow-hidden hover-scale shadow-card hover:shadow-elegant transition-smooth">
+                <div className="relative">
+                  <img 
+                    src={property.image_url && property.image_url !== '/placeholder.svg' 
+                      ? property.image_url 
+                      : getPropertyImage(property.type)} 
+                    alt={property.title}
+                    className="w-full h-64 object-cover"
+                  />
+                  {property.badge && (
+                    <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground">
+                      {property.badge}
+                    </Badge>
+                  )}
                 </div>
                 
-                <div className="flex items-center gap-4 text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{property.location}</span>
+                <CardHeader>
+                  <div className="flex justify-between items-start mb-2">
+                    <CardTitle className="text-xl">{property.title}</CardTitle>
+                    <span className="text-2xl font-bold text-primary">{property.price}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Ruler className="w-4 h-4" />
-                    <span className="text-sm">{property.area}</span>
+                  
+                  <div className="flex items-center gap-4 text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      <span className="text-sm">{property.location}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Ruler className="w-4 h-4" />
+                      <span className="text-sm">{property.area}</span>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <p className="text-muted-foreground mb-4">{property.description}</p>
+                </CardHeader>
                 
-                <div className="flex gap-2">
-                  <Button variant="default" size="sm" className="flex-1">
-                    View Details
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Home className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">{property.description}</p>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="default" size="sm" className="flex-1">
+                      View Details
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Home className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
         
         <div className="text-center mt-12">
           <Button variant="hero" size="lg">
