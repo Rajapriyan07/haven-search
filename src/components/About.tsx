@@ -26,7 +26,7 @@ const About = () => {
           {/* Content */}
           <div>
             <Badge className="mb-4 bg-secondary text-secondary-foreground">
-              About Premier Properties
+              About Shabeer Land & Home Promoters
             </Badge>
             
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
