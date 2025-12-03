@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Home, Ruler, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -174,14 +174,18 @@ const FeaturedProperties = () => {
                   <CardContent>
                     <p className="text-muted-foreground mb-4">{property.description}</p>
                     
-                    <div className="flex gap-2">
-                      <Button variant="default" size="sm" className="flex-1">
-                        View Details
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Home className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        const message = `Hi, I'm interested in the property: ${property.title} - ${property.location} (${property.price})`;
+                        window.open(`https://wa.me/918056987186?text=${encodeURIComponent(message)}`, '_blank');
+                      }}
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Contact via WhatsApp
+                    </Button>
                   </CardContent>
                 </Card>
               );
