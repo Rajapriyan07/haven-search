@@ -21,18 +21,33 @@ interface Property {
   area: string;
   type: string;
   image_url: string | null;
+  images: string[] | null;
   badge: string | null;
   description: string | null;
   featured: boolean | null;
 }
 
-const emptyProperty = {
+interface FormData {
+  title: string;
+  location: string;
+  price: string;
+  area: string;
+  type: string;
+  image_url: string;
+  images: string[];
+  badge: string;
+  description: string;
+  featured: boolean;
+}
+
+const emptyProperty: FormData = {
   title: '',
   location: '',
   price: '',
   area: '',
   type: '',
   image_url: '',
+  images: [],
   badge: '',
   description: '',
   featured: false,
@@ -47,9 +62,8 @@ const Admin = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [formData, setFormData] = useState(emptyProperty);
+  const [formData, setFormData] = useState<FormData>(emptyProperty);
   const [uploading, setUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -71,8 +85,11 @@ const Admin = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: typeof emptyProperty) => {
-      const { error } = await supabase.from('properties').insert([data]);
+    mutationFn: async (data: FormData) => {
+      const { error } = await supabase.from('properties').insert([{
+        ...data,
+        image_url: data.images[0] || data.image_url || null,
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -87,8 +104,11 @@ const Admin = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof emptyProperty }) => {
-      const { error } = await supabase.from('properties').update(data).eq('id', id);
+    mutationFn: async ({ id, data }: { id: string; data: FormData }) => {
+      const { error } = await supabase.from('properties').update({
+        ...data,
+        image_url: data.images[0] || data.image_url || null,
+      }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -121,11 +141,16 @@ const Admin = () => {
     setIsDialogOpen(false);
     setEditingProperty(null);
     setFormData(emptyProperty);
-    setImagePreview(null);
   };
 
   const openEditDialog = (property: Property) => {
     setEditingProperty(property);
+    const existingImages = property.images || [];
+    // If no images in array but there's an image_url, use that
+    const images = existingImages.length > 0 
+      ? existingImages 
+      : (property.image_url ? [property.image_url] : []);
+    
     setFormData({
       title: property.title,
       location: property.location,
@@ -133,60 +158,75 @@ const Admin = () => {
       area: property.area,
       type: property.type,
       image_url: property.image_url || '',
+      images: images,
       badge: property.badge || '',
       description: property.description || '',
       featured: property.featured || false,
     });
-    setImagePreview(property.image_url || null);
     setIsDialogOpen(true);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({ title: 'Error', description: 'Please select an image file', variant: 'destructive' });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'Error', description: 'Image must be less than 5MB', variant: 'destructive' });
-      return;
-    }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
+    const uploadedUrls: string[] = [];
+
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `property-images/${fileName}`;
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast({ title: 'Error', description: `${file.name} is not an image file`, variant: 'destructive' });
+          continue;
+        }
 
-      const { error: uploadError } = await supabase.storage
-        .from('properties')
-        .upload(filePath, file);
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({ title: 'Error', description: `${file.name} is larger than 5MB`, variant: 'destructive' });
+          continue;
+        }
 
-      if (uploadError) throw uploadError;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `property-images/${fileName}`;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('properties')
-        .getPublicUrl(filePath);
+        const { error: uploadError } = await supabase.storage
+          .from('properties')
+          .upload(filePath, file);
 
-      setFormData({ ...formData, image_url: publicUrl });
-      setImagePreview(publicUrl);
-      toast({ title: 'Success', description: 'Image uploaded successfully' });
+        if (uploadError) {
+          toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('properties')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      if (uploadedUrls.length > 0) {
+        setFormData(prev => ({ 
+          ...prev, 
+          images: [...prev.images, ...uploadedUrls] 
+        }));
+        toast({ title: 'Success', description: `${uploadedUrls.length} image(s) uploaded successfully` });
+      }
     } catch (error: any) {
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const removeImage = () => {
-    setFormData({ ...formData, image_url: '' });
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -296,53 +336,56 @@ const Admin = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Property Image</Label>
+                  <Label>Property Images</Label>
                   <div className="space-y-3">
-                    {imagePreview ? (
-                      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border">
-                        <img 
-                          src={imagePreview} 
-                          alt="Property preview" 
-                          className="w-full h-full object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={removeImage}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div 
-                        className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">Click to upload image</p>
+                    {formData.images.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {formData.images.map((url, index) => (
+                          <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-border">
+                            <img 
+                              src={url} 
+                              alt={`Property image ${index + 1}`} 
+                              className="w-full h-full object-cover"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
                       </div>
                     )}
+                    <div 
+                      className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Click to upload images</p>
+                      <p className="text-xs text-muted-foreground">You can select multiple images</p>
+                    </div>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       onChange={handleImageUpload}
                     />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploading}
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        {uploading ? 'Uploading...' : 'Upload from Gallery'}
-                      </Button>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploading ? 'Uploading...' : 'Upload from Gallery'}
+                    </Button>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -389,6 +432,7 @@ const Admin = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Image</TableHead>
                       <TableHead>Title</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Price</TableHead>
@@ -400,6 +444,26 @@ const Admin = () => {
                   <TableBody>
                     {properties?.map((property) => (
                       <TableRow key={property.id}>
+                        <TableCell>
+                          {(property.images && property.images.length > 0) || property.image_url ? (
+                            <div className="relative w-16 h-12 rounded overflow-hidden">
+                              <img 
+                                src={property.images?.[0] || property.image_url || ''} 
+                                alt={property.title}
+                                className="w-full h-full object-cover"
+                              />
+                              {property.images && property.images.length > 1 && (
+                                <span className="absolute bottom-0 right-0 bg-background/80 text-xs px-1 rounded-tl">
+                                  +{property.images.length - 1}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="w-16 h-12 bg-muted rounded flex items-center justify-center">
+                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">{property.title}</TableCell>
                         <TableCell>{property.location}</TableCell>
                         <TableCell>{property.price}</TableCell>
