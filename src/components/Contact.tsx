@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MapPin, Clock } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, MessageCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const contactInfo = [
   {
@@ -33,6 +35,56 @@ const contactInfo = [
 ];
 
 const Contact = () => {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    interest: "Land Purchase",
+    message: "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
+      toast({
+        title: "Required fields missing",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const whatsappMessage = `New Inquiry from Website:
+    
+Name: ${formData.firstName} ${formData.lastName}
+Email: ${formData.email}
+Phone: ${formData.phone || "Not provided"}
+Interest: ${formData.interest}
+
+Message:
+${formData.message}`;
+
+    window.open(`https://wa.me/918056987186?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+    
+    toast({
+      title: "Redirecting to WhatsApp",
+      description: "Your message is being sent via WhatsApp.",
+    });
+
+    // Reset form
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      interest: "Land Purchase",
+      message: "",
+    });
+  };
+
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
@@ -55,63 +107,90 @@ const Contact = () => {
               <CardHeader>
                 <CardTitle className="text-2xl">Send us a message</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        First Name *
+                      </label>
+                      <Input 
+                        placeholder="John" 
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Last Name *
+                      </label>
+                      <Input 
+                        placeholder="Doe"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Email *
+                      </label>
+                      <Input 
+                        type="email" 
+                        placeholder="john@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Phone
+                      </label>
+                      <Input 
+                        type="tel" 
+                        placeholder="+91 98765 43210"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  
                   <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      First Name *
+                      Interest Type
                     </label>
-                    <Input placeholder="John" />
+                    <select 
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                      value={formData.interest}
+                      onChange={(e) => setFormData({ ...formData, interest: e.target.value })}
+                    >
+                      <option>Land Purchase</option>
+                      <option>Home Construction</option>
+                      <option>Investment Opportunity</option>
+                      <option>Development Project</option>
+                      <option>Consultation</option>
+                    </select>
                   </div>
+                  
                   <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                      Last Name *
+                      Message *
                     </label>
-                    <Input placeholder="Doe" />
+                    <Textarea 
+                      placeholder="Tell us about your project or requirements..."
+                      className="min-h-32"
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    />
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Email *
-                    </label>
-                    <Input type="email" placeholder="john@example.com" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Phone
-                    </label>
-                    <Input type="tel" placeholder="+1 (555) 123-4567" />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
-                    Interest Type
-                  </label>
-                  <select className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground">
-                    <option>Land Purchase</option>
-                    <option>Home Construction</option>
-                    <option>Investment Opportunity</option>
-                    <option>Development Project</option>
-                    <option>Consultation</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
-                    Message *
-                  </label>
-                  <Textarea 
-                    placeholder="Tell us about your project or requirements..."
-                    className="min-h-32"
-                  />
-                </div>
-                
-                <Button variant="hero" size="lg" className="w-full">
-                  Send Message
-                </Button>
+                  
+                  <Button type="submit" variant="hero" size="lg" className="w-full">
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Send via WhatsApp
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </div>
