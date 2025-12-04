@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import landPlot from "@/assets/land-plot.jpg";
 import modernHome from "@/assets/modern-home.jpg";
 
@@ -84,6 +92,10 @@ const PropertyImageCarousel = ({ images, title, type }: PropertyImageCarouselPro
 };
 
 const FeaturedProperties = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
+
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['featured-properties'],
     queryFn: async () => {
@@ -98,6 +110,39 @@ const FeaturedProperties = () => {
     },
   });
 
+  // Get unique types and locations for filters
+  const { types, locations } = useMemo(() => {
+    if (!properties) return { types: [], locations: [] };
+    const uniqueTypes = [...new Set(properties.map(p => p.type))].filter(Boolean);
+    const uniqueLocations = [...new Set(properties.map(p => p.location))].filter(Boolean);
+    return { types: uniqueTypes, locations: uniqueLocations };
+  }, [properties]);
+
+  // Filter properties based on search and filters
+  const filteredProperties = useMemo(() => {
+    if (!properties) return [];
+    
+    return properties.filter(property => {
+      const matchesSearch = searchQuery === "" || 
+        property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (property.description?.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesType = typeFilter === "all" || property.type === typeFilter;
+      const matchesLocation = locationFilter === "all" || property.location === locationFilter;
+      
+      return matchesSearch && matchesType && matchesLocation;
+    });
+  }, [properties, searchQuery, typeFilter, locationFilter]);
+
+  const hasActiveFilters = searchQuery !== "" || typeFilter !== "all" || locationFilter !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setLocationFilter("all");
+  };
+
   return (
     <section className="py-20 gradient-subtle">
       <div className="container mx-auto px-4">
@@ -108,6 +153,65 @@ const FeaturedProperties = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Handpicked properties offering exceptional value and investment potential
           </p>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="mb-8 p-6 bg-card rounded-xl border shadow-sm">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by title, location, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            {/* Type Filter */}
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Property Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {types.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Location Filter */}
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <MapPin className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {locations.map(location => (
+                  <SelectItem key={location} value={location}>{location}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters} className="shrink-0">
+                <X className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+            )}
+          </div>
+          
+          {/* Results count */}
+          {!isLoading && properties && (
+            <p className="text-sm text-muted-foreground mt-4">
+              Showing {filteredProperties.length} of {properties.length} properties
+            </p>
+          )}
         </div>
         
         {isLoading ? (
@@ -129,9 +233,18 @@ const FeaturedProperties = () => {
           <div className="text-center text-destructive">
             Failed to load properties. Please try again later.
           </div>
+        ) : filteredProperties.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">No properties found matching your criteria.</p>
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters} className="mt-4">
+                Clear Filters
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {properties?.map((property) => {
+            {filteredProperties.map((property) => {
               const images = (property.images as string[] | null) || [];
               const fallbackImage = property.image_url && property.image_url !== '/placeholder.svg' 
                 ? property.image_url 
