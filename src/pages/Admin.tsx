@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Pencil, Trash2, ArrowLeft, Upload, ImageIcon, X } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, ArrowLeft, Upload, ImageIcon, X, Video } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Property {
@@ -22,6 +22,7 @@ interface Property {
   type: string;
   image_url: string | null;
   images: string[] | null;
+  videos: string[] | null;
   badge: string | null;
   description: string | null;
   featured: boolean | null;
@@ -35,6 +36,7 @@ interface FormData {
   type: string;
   image_url: string;
   images: string[];
+  videos: string[];
   badge: string;
   description: string;
   featured: boolean;
@@ -48,6 +50,7 @@ const emptyProperty: FormData = {
   type: '',
   image_url: '',
   images: [],
+  videos: [],
   badge: '',
   description: '',
   featured: false,
@@ -59,11 +62,13 @@ const Admin = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyProperty);
   const [uploading, setUploading] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -159,6 +164,7 @@ const Admin = () => {
       type: property.type,
       image_url: property.image_url || '',
       images: images,
+      videos: property.videos || [],
       badge: property.badge || '',
       description: property.description || '',
       featured: property.featured || false,
@@ -226,6 +232,69 @@ const Admin = () => {
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingVideo(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith('video/')) {
+          toast({ title: 'Error', description: `${file.name} is not a video file`, variant: 'destructive' });
+          continue;
+        }
+
+        // Validate file size (max 50MB for videos)
+        if (file.size > 50 * 1024 * 1024) {
+          toast({ title: 'Error', description: `${file.name} is larger than 50MB`, variant: 'destructive' });
+          continue;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `property-videos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('properties')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('properties')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      if (uploadedUrls.length > 0) {
+        setFormData(prev => ({ 
+          ...prev, 
+          videos: [...prev.videos, ...uploadedUrls] 
+        }));
+        toast({ title: 'Success', description: `${uploadedUrls.length} video(s) uploaded successfully` });
+      }
+    } catch (error: any) {
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
+  };
+
+  const removeVideo = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      videos: prev.videos.filter((_, i) => i !== index)
     }));
   };
 
@@ -385,6 +454,60 @@ const Admin = () => {
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       {uploading ? 'Uploading...' : 'Upload from Gallery'}
+                    </Button>
+                  </div>
+                </div>
+                {/* Video Upload Section */}
+                <div className="space-y-2">
+                  <Label>Property Videos</Label>
+                  <div className="space-y-3">
+                    {formData.videos.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {formData.videos.map((url, index) => (
+                          <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-border">
+                            <video 
+                              src={url} 
+                              className="w-full h-full object-cover"
+                              controls
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6"
+                              onClick={() => removeVideo(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div 
+                      className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => videoInputRef.current?.click()}
+                    >
+                      <Video className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Click to upload videos</p>
+                      <p className="text-xs text-muted-foreground">Max 50MB per video</p>
+                    </div>
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleVideoUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={uploadingVideo}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadingVideo ? 'Uploading Video...' : 'Upload Video'}
                     </Button>
                   </div>
                 </div>

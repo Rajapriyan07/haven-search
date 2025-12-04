@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X } from "lucide-react";
+import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X, Play } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,36 +22,59 @@ const getPropertyImage = (type: string) => {
   return landPlot;
 };
 
-interface PropertyImageCarouselProps {
+interface PropertyMediaCarouselProps {
   images: string[];
+  videos: string[];
   title: string;
   type: string;
 }
 
-const PropertyImageCarousel = ({ images, title, type }: PropertyImageCarouselProps) => {
+interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
+}
+
+const PropertyMediaCarousel = ({ images, videos, title, type }: PropertyMediaCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  const allImages = images.length > 0 ? images : [getPropertyImage(type)];
+  // Combine images and videos into media items
+  const mediaItems: MediaItem[] = [
+    ...images.map(url => ({ url, type: 'image' as const })),
+    ...videos.map(url => ({ url, type: 'video' as const }))
+  ];
+  
+  const allMedia = mediaItems.length > 0 ? mediaItems : [{ url: getPropertyImage(type), type: 'image' as const }];
   
   const goToPrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? allMedia.length - 1 : prev - 1));
   };
   
   const goToNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === allMedia.length - 1 ? 0 : prev + 1));
   };
+
+  const currentMedia = allMedia[currentIndex];
 
   return (
     <div className="relative group">
-      <img 
-        src={allImages[currentIndex]} 
-        alt={`${title} - Image ${currentIndex + 1}`}
-        className="w-full h-64 object-cover transition-opacity"
-      />
+      {currentMedia.type === 'video' ? (
+        <video 
+          src={currentMedia.url}
+          className="w-full h-64 object-cover"
+          controls
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <img 
+          src={currentMedia.url} 
+          alt={`${title} - Image ${currentIndex + 1}`}
+          className="w-full h-64 object-cover transition-opacity"
+        />
+      )}
       
-      {allImages.length > 1 && (
+      {allMedia.length > 1 && (
         <>
           <Button
             variant="ghost"
@@ -72,17 +95,21 @@ const PropertyImageCarousel = ({ images, title, type }: PropertyImageCarouselPro
           
           {/* Dots indicator */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {allImages.map((_, index) => (
+            {allMedia.map((media, index) => (
               <button
                 key={index}
                 onClick={(e) => {
                   e.stopPropagation();
                   setCurrentIndex(index);
                 }}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                className={`w-2 h-2 rounded-full transition-colors flex items-center justify-center ${
                   index === currentIndex ? 'bg-primary' : 'bg-background/60'
                 }`}
-              />
+              >
+                {media.type === 'video' && (
+                  <Play className="h-1.5 w-1.5" />
+                )}
+              </button>
             ))}
           </div>
         </>
@@ -246,6 +273,7 @@ const FeaturedProperties = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProperties.map((property) => {
               const images = (property.images as string[] | null) || [];
+              const videos = (property.videos as string[] | null) || [];
               const fallbackImage = property.image_url && property.image_url !== '/placeholder.svg' 
                 ? property.image_url 
                 : null;
@@ -254,8 +282,9 @@ const FeaturedProperties = () => {
               return (
                 <Card key={property.id} className="overflow-hidden hover-scale shadow-card hover:shadow-elegant transition-smooth">
                   <div className="relative">
-                    <PropertyImageCarousel 
-                      images={displayImages} 
+                    <PropertyMediaCarousel 
+                      images={displayImages}
+                      videos={videos}
                       title={property.title} 
                       type={property.type}
                     />
