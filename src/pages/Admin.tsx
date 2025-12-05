@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Pencil, Trash2, ArrowLeft, Upload, ImageIcon, X, Video } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, ArrowLeft, Upload, ImageIcon, X, Video, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Property {
@@ -87,6 +87,25 @@ const Admin = () => {
       return data as Property[];
     },
     enabled: !!user,
+  });
+
+  // Fetch view counts for all properties
+  const { data: viewCounts } = useQuery({
+    queryKey: ['property-view-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('property_views')
+        .select('property_id');
+      if (error) throw error;
+      
+      // Count views per property
+      const counts: Record<string, number> = {};
+      data?.forEach((view) => {
+        counts[view.property_id] = (counts[view.property_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: !!user && isAdmin,
   });
 
   const createMutation = useMutation({
@@ -560,6 +579,7 @@ const Admin = () => {
                       <TableHead>Location</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Type</TableHead>
+                      <TableHead>Views</TableHead>
                       <TableHead>Featured</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -591,6 +611,12 @@ const Admin = () => {
                         <TableCell>{property.location}</TableCell>
                         <TableCell>{property.price}</TableCell>
                         <TableCell>{property.type}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <span>{viewCounts?.[property.id] || 0}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>{property.featured ? 'Yes' : 'No'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
