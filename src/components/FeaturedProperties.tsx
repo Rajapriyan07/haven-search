@@ -61,11 +61,12 @@ const PropertyMediaCarousel = ({ images, videos, title, type }: PropertyMediaCar
     <div className="relative group">
       {currentMedia.type === 'video' ? (
         <video 
-          src={currentMedia.url}
-          className="w-full h-64 object-cover bg-black"
+          key={currentMedia.url}
+          className="w-full h-64 object-contain bg-black"
           controls
           playsInline
-          preload="auto"
+          preload="metadata"
+          controlsList="nodownload"
           onClick={(e) => e.stopPropagation()}
         >
           <source src={currentMedia.url} type="video/mp4" />
