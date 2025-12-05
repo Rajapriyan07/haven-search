@@ -62,10 +62,15 @@ const PropertyMediaCarousel = ({ images, videos, title, type }: PropertyMediaCar
       {currentMedia.type === 'video' ? (
         <video 
           src={currentMedia.url}
-          className="w-full h-64 object-cover"
+          className="w-full h-64 object-cover bg-black"
           controls
+          playsInline
+          preload="auto"
           onClick={(e) => e.stopPropagation()}
-        />
+        >
+          <source src={currentMedia.url} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
       ) : (
         <img 
           src={currentMedia.url} 
