@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -127,6 +127,7 @@ const FeaturedProperties = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
+  const trackedIds = useRef<Set<string>>(new Set());
 
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['featured-properties'],
@@ -141,6 +142,21 @@ const FeaturedProperties = () => {
       return data;
     },
   });
+
+  // Track property views when properties are loaded
+  useEffect(() => {
+    if (properties && properties.length > 0) {
+      properties.forEach(async (property) => {
+        // Only track each property once per session
+        if (!trackedIds.current.has(property.id)) {
+          trackedIds.current.add(property.id);
+          await supabase.from('property_views').insert({
+            property_id: property.id,
+          });
+        }
+      });
+    }
+  }, [properties]);
 
   // Get unique types and locations for filters
   const { types, locations } = useMemo(() => {
