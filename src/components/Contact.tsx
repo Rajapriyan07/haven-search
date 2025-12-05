@@ -37,8 +37,7 @@ const contactInfo = [
 const Contact = () => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     phone: "",
     interest: "Land Purchase",
@@ -48,7 +47,7 @@ const Contact = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.message) {
+    if (!formData.name || !formData.phone || !formData.message) {
       toast({
         title: "Required fields missing",
         description: "Please fill in all required fields.",
@@ -59,9 +58,9 @@ const Contact = () => {
 
     const whatsappMessage = `New Inquiry from Website:
     
-Name: ${formData.firstName} ${formData.lastName}
-Email: ${formData.email}
-Phone: ${formData.phone || "Not provided"}
+Name: ${formData.name}
+Email: ${formData.email || "Not provided"}
+Phone: ${formData.phone}
 Interest: ${formData.interest}
 
 Message:
@@ -76,8 +75,7 @@ ${formData.message}`;
 
     // Reset form
     setFormData({
-      firstName: "",
-      lastName: "",
+      name: "",
       email: "",
       phone: "",
       interest: "Land Purchase",
@@ -109,50 +107,38 @@ ${formData.message}`;
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        First Name *
-                      </label>
-                      <Input 
-                        placeholder="John" 
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Last Name *
-                      </label>
-                      <Input 
-                        placeholder="Doe"
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      />
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      Name *
+                    </label>
+                    <Input 
+                      placeholder="Your Name" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-foreground mb-2 block">
-                        Email *
-                      </label>
-                      <Input 
-                        type="email" 
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-2 block">
-                        Phone
+                        Phone *
                       </label>
                       <Input 
                         type="tel" 
                         placeholder="+91 98765 43210"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Email
+                      </label>
+                      <Input 
+                        type="email" 
+                        placeholder="john@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       />
                     </div>
                   </div>
