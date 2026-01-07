@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Plus, Pencil, Trash2, ArrowLeft, Upload, ImageIcon, X, Video, Eye } from 'lucide-react';
+import { Building2, Plus, Pencil, Trash2, ArrowLeft, Upload, ImageIcon, X, Video, Eye, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Property {
@@ -82,7 +82,7 @@ const Admin = () => {
       const { data, error } = await supabase
         .from('properties')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
       if (error) throw error;
       return data as Property[];
     },
@@ -155,6 +155,24 @@ const Admin = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
       queryClient.invalidateQueries({ queryKey: ['featured-properties'] });
       toast({ title: 'Success', description: 'Property deleted successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const repostMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('properties')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
+      queryClient.invalidateQueries({ queryKey: ['featured-properties'] });
+      toast({ title: 'Success', description: 'Property moved to top' });
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -620,6 +638,14 @@ const Admin = () => {
                         <TableCell>{property.featured ? 'Yes' : 'No'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Repost to top"
+                              onClick={() => repostMutation.mutate(property.id)}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
