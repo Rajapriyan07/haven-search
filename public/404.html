@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Haven Search</title>
-  <script>
-    // GitHub Pages SPA redirect
-    // This script redirects 404s to index.html with the path preserved
-    const path = window.location.pathname;
-    const base = '/haven-search';
-    if (path.startsWith(base)) {
-      const route = path.slice(base.length) || '/';
-      sessionStorage.setItem('redirectPath', route);
-    }
-    window.location.replace('/haven-search/');
-  </script>
-</head>
-<body>
-  <p>Redirecting...</p>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <script>
+      // spa-github-pages redirect
+      // Redirects /repo/some/path to /repo/?/some/path
+      (function () {
+        var l = window.location;
+        var repo = "/haven-search";
+        var path = l.pathname.startsWith(repo) ? l.pathname.slice(repo.length) : l.pathname;
+        var target = repo + "/?" + path + l.search + l.hash;
+        l.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
 </html>
+
