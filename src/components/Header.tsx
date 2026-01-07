@@ -28,9 +28,11 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Shabeer Land & Home Promoters" className="w-12 h-12 rounded-full object-cover" />
-            <span className="text-xl font-bold text-foreground hidden sm:inline">Shabeer Land & Home Promoters</span>
+          <Link to="/" className="flex items-center gap-2 min-w-0">
+            <img src={logo} alt="Shabeer Land & Home Promoters" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0" />
+            <div className="flex flex-col leading-tight min-w-0">
+              <span className="text-sm sm:text-xl font-bold text-foreground truncate">Shabeer Land & Home Promoters</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
