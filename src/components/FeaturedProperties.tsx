@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X, Play } from "lucide-react";
+import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X, Play, Expand } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 import landPlot from "@/assets/land-plot.jpg";
 import modernHome from "@/assets/modern-home.jpg";
 
@@ -34,8 +38,43 @@ interface MediaItem {
   type: 'image' | 'video';
 }
 
+// Fullscreen Video Modal Component
+const VideoModal = ({ 
+  isOpen, 
+  onClose, 
+  videoUrl, 
+  title 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  videoUrl: string; 
+  title: string;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl w-[95vw] p-0 bg-black border-none">
+        <div className="relative w-full aspect-video">
+          <video
+            className="w-full h-full"
+            controls
+            autoPlay
+            playsInline
+            controlsList="nodownload"
+          >
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <p className="text-white text-center py-2 text-sm">{title}</p>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const PropertyMediaCarousel = ({ images, videos, title, type }: PropertyMediaCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState("");
   
   // Combine images and videos into media items
   const mediaItems: MediaItem[] = [
@@ -55,72 +94,98 @@ const PropertyMediaCarousel = ({ images, videos, title, type }: PropertyMediaCar
     setCurrentIndex((prev) => (prev === allMedia.length - 1 ? 0 : prev + 1));
   };
 
+  const openVideoFullscreen = (url: string) => {
+    setSelectedVideoUrl(url);
+    setVideoModalOpen(true);
+  };
+
   const currentMedia = allMedia[currentIndex];
 
   return (
-    <div className="relative group">
-      {currentMedia.type === 'video' ? (
-        <video 
-          key={currentMedia.url}
-          className="w-full h-64 object-contain bg-black"
-          controls
-          playsInline
-          preload="metadata"
-          controlsList="nodownload"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <source src={currentMedia.url} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      ) : (
-        <img 
-          src={currentMedia.url} 
-          alt={`${title} - Image ${currentIndex + 1}`}
-          className="w-full h-64 object-cover transition-opacity"
-        />
-      )}
+    <>
+      <VideoModal
+        isOpen={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoUrl={selectedVideoUrl}
+        title={title}
+      />
       
-      {allMedia.length > 1 && (
-        <>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-            onClick={goToPrevious}
+      <div className="relative group">
+        {currentMedia.type === 'video' ? (
+          <div 
+            className="relative w-full h-64 bg-black cursor-pointer"
+            onClick={() => openVideoFullscreen(currentMedia.url)}
           >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-            onClick={goToNext}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          
-          {/* Dots indicator */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {allMedia.map((media, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentIndex(index);
-                }}
-                className={`w-2 h-2 rounded-full transition-colors flex items-center justify-center ${
-                  index === currentIndex ? 'bg-primary' : 'bg-background/60'
-                }`}
-              >
-                {media.type === 'video' && (
-                  <Play className="h-1.5 w-1.5" />
-                )}
-              </button>
-            ))}
+            <video 
+              key={currentMedia.url}
+              className="w-full h-full object-contain pointer-events-none"
+              preload="metadata"
+              muted
+            >
+              <source src={currentMedia.url} type="video/mp4" />
+            </video>
+            {/* Play overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors">
+              <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center shadow-lg">
+                <Play className="w-8 h-8 text-primary-foreground fill-primary-foreground ml-1" />
+              </div>
+            </div>
+            {/* Expand hint */}
+            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+              <Expand className="w-3 h-3" />
+              Tap to watch
+            </div>
           </div>
-        </>
-      )}
-    </div>
+        ) : (
+          <img 
+            src={currentMedia.url} 
+            alt={`${title} - Image ${currentIndex + 1}`}
+            className="w-full h-64 object-cover transition-opacity"
+          />
+        )}
+        
+        {allMedia.length > 1 && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+              onClick={goToPrevious}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+              onClick={goToNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            
+            {/* Dots indicator */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+              {allMedia.map((media, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentIndex(index);
+                  }}
+                  className={`w-2 h-2 rounded-full transition-colors flex items-center justify-center ${
+                    index === currentIndex ? 'bg-primary' : 'bg-background/60'
+                  }`}
+                >
+                  {media.type === 'video' && (
+                    <Play className="h-1.5 w-1.5" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
