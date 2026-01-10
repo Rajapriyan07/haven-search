@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X, Play, Expand } from "lucide-react";
+import { MapPin, Ruler, ChevronLeft, ChevronRight, MessageCircle, Search, Filter, X, Play, Expand, Phone, Share2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -403,18 +403,70 @@ const FeaturedProperties = () => {
                   <CardContent>
                     <p className="text-muted-foreground mb-4">{property.description}</p>
                     
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => {
-                        const message = `Hi, I'm interested in the property: ${property.title} - ${property.location} (${property.price})`;
-                        window.open(`https://wa.me/918056987186?text=${encodeURIComponent(message)}`, '_blank');
-                      }}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Contact via WhatsApp
-                    </Button>
+                    {/* Contact Numbers */}
+                    <div className="flex flex-col gap-2 mb-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4 text-primary" />
+                        <span className="font-medium">Contact:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <a 
+                          href="tel:+918056987186" 
+                          className="flex items-center gap-1 text-sm text-primary hover:underline"
+                        >
+                          8056987186
+                        </a>
+                        <span className="text-muted-foreground">|</span>
+                        <a 
+                          href="tel:+919789541145" 
+                          className="flex items-center gap-1 text-sm text-primary hover:underline"
+                        >
+                          9789541145
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => {
+                          const message = `Hi, I'm interested in the property: ${property.title} - ${property.location} (${property.price})`;
+                          window.open(`https://wa.me/918056987186?text=${encodeURIComponent(message)}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        WhatsApp
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={async () => {
+                          const propertyUrl = `${window.location.origin}/?property=${property.id}`;
+                          const shareText = `🏠 ${property.title}\n📍 ${property.location}\n💰 ${property.price}\n📐 ${property.area}\n\n${property.description || ''}\n\nView property: ${propertyUrl}`;
+                          
+                          if (navigator.share) {
+                            try {
+                              await navigator.share({
+                                title: property.title,
+                                text: shareText,
+                                url: propertyUrl,
+                              });
+                            } catch (err) {
+                              // User cancelled or error
+                            }
+                          } else {
+                            // Fallback: copy to clipboard
+                            await navigator.clipboard.writeText(shareText);
+                            alert('Property details copied to clipboard!');
+                          }
+                        }}
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
