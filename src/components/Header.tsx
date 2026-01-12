@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Shield } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { useAuth } from "@/hooks/useAuth";
+import InstallAppButton from "@/components/InstallAppButton";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -50,6 +51,7 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
+            <InstallAppButton />
             {user ? (
               <>
                 {isAdmin && (
@@ -102,6 +104,7 @@ const Header = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                <InstallAppButton />
                 {user ? (
                   <>
                     {isAdmin && (
