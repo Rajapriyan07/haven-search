@@ -31,7 +31,7 @@ const Header = () => {
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img src={logo} alt="Shabeer Land & Home Promoters" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0" />
             <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-sm sm:text-xl font-bold text-foreground truncate">Shabeer Land & Home Promoters</span>
+              <span className="text-[10px] xs:text-xs sm:text-xl font-bold text-foreground truncate">Shabeer Land & Home Promoters</span>
             </div>
           </Link>
 
