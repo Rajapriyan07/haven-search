@@ -447,73 +447,37 @@ const FeaturedProperties = () => {
                           const propertyUrl = `${window.location.origin}/?property=${property.id}`;
                           const shareText = `🏠 ${property.title}\n📍 ${property.location}\n💰 ${property.price}\n📐 ${property.area}\n\n${property.description || ''}\n\nView property: ${propertyUrl}`;
                           
-                          // Collect all media URLs
-                          const allMediaUrls = [...displayImages, ...videos];
-                          
-                          // Try to share with files if supported
-                          if (navigator.share && navigator.canShare) {
+                          // Check if native share is supported
+                          if (navigator.share) {
                             try {
-                              // Fetch media files
-                              const mediaFiles: File[] = [];
-                              
-                              for (const url of allMediaUrls) {
-                                try {
-                                  const response = await fetch(url);
-                                  const blob = await response.blob();
-                                  const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm') || blob.type.startsWith('video/');
-                                  const extension = isVideo ? 'mp4' : 'jpg';
-                                  const mimeType = isVideo ? 'video/mp4' : 'image/jpeg';
-                                  const fileName = `${property.title.replace(/[^a-zA-Z0-9]/g, '_')}_${mediaFiles.length + 1}.${extension}`;
-                                  const file = new File([blob], fileName, { type: mimeType });
-                                  mediaFiles.push(file);
-                                } catch {
-                                  // Skip files that fail to fetch
-                                }
-                              }
-                              
-                              const shareData: ShareData = {
-                                title: property.title,
-                                text: shareText,
-                              };
-                              
-                              // Add files if we have any and browser supports it
-                              if (mediaFiles.length > 0 && navigator.canShare({ files: mediaFiles })) {
-                                shareData.files = mediaFiles;
-                              } else {
-                                shareData.url = propertyUrl;
-                              }
-                              
-                              await navigator.share(shareData);
-                            } catch (err) {
-                              // User cancelled or error - try without files
-                              if ((err as Error).name !== 'AbortError') {
-                                try {
-                                  await navigator.share({
-                                    title: property.title,
-                                    text: shareText,
-                                    url: propertyUrl,
-                                  });
-                                } catch {
-                                  // Fallback to clipboard
-                                  await navigator.clipboard.writeText(shareText);
-                                  alert('Property details copied to clipboard!');
-                                }
-                              }
-                            }
-                          } else if (navigator.share) {
-                            // Share without files
-                            try {
+                              // First try simple share (works on all devices with share API)
                               await navigator.share({
                                 title: property.title,
                                 text: shareText,
                                 url: propertyUrl,
                               });
-                            } catch {
-                              // User cancelled
+                              return; // Success - exit early
+                            } catch (err) {
+                              // Only show fallback if it's not a user cancel
+                              if ((err as Error).name === 'AbortError') {
+                                return; // User cancelled - do nothing
+                              }
+                              // Fall through to clipboard fallback
                             }
-                          } else {
-                            // Fallback: copy to clipboard
+                          }
+                          
+                          // Fallback: copy to clipboard only if share API not available
+                          try {
                             await navigator.clipboard.writeText(shareText);
+                            alert('Property details copied to clipboard!');
+                          } catch {
+                            // Last resort fallback
+                            const textArea = document.createElement('textarea');
+                            textArea.value = shareText;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
                             alert('Property details copied to clipboard!');
                           }
                         }}
