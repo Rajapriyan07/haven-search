@@ -14,7 +14,7 @@ const Hero = () => {
       
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-center text-white">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-7xl font-bold mb-6 leading-tight">
           Shabeer Land & Home Promoters
           <br />
           <span className="text-accent">Welcomes You</span>
